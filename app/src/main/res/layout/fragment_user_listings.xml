@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
+        tools:context=".UserListingsFragment">
+
+    <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/user_listings_refresher"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/action_bar">
+
+        <android.support.v7.widget.RecyclerView
+                android:id="@+id/user_listings_recycler"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layoutManager="android.support.v7.widget.LinearLayoutManager"
+                app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                android:background="@color/colorBackground" />
+
+    </android.support.v4.widget.SwipeRefreshLayout>
+</RelativeLayout>

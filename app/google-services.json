@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "306427953859",
+    "firebase_url": "https://bazaar-ccb82.firebaseio.com",
+    "project_id": "bazaar-ccb82",
+    "storage_bucket": "bazaar-ccb82.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:306427953859:android:a7cd2394e1567a3e",
+        "android_client_info": {
+          "package_name": "edu.rose_hulman.bazaar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "306427953859-mln1uv62k7lga61tr608g99mcefmttup.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.rose_hulman.bazaar",
+            "certificate_hash": "5b27b85658602dfc81c1b2387a835de52807aa7d"
+          }
+        },
+        {
+          "client_id": "306427953859-160k05p6rb9hdlc263f6okkbqeqsmqud.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlZENeWWb_jrEDX2AuNXdgMsrwBJ-d6_Q"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "306427953859-160k05p6rb9hdlc263f6okkbqeqsmqud.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
