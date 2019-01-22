@@ -8,7 +8,7 @@
 
     <android.support.design.widget.TabLayout
             android:layout_width="match_parent"
-            android:layout_height="35dp"
+            android:layout_height="50dp"
             app:tabIndicatorHeight="3dp"
             app:tabIndicatorColor="@color/colorPrimary"
             app:tabBackground="@color/colorPrimaryDark"

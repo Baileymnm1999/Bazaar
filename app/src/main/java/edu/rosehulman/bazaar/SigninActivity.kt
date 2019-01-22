@@ -1,33 +1,18 @@
-package edu.rose_hulman.bazaar
+package edu.rosehulman.bazaar
 
-import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
 import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.Switch
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.FirebaseUserMetadata
 import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.database.FirebaseDatabase
-import edu.rose_hulman.bazaar.R.id.first_name_text_signup
-import edu.rose_hulman.bazaar.R.id.last_name_text_signup
-import edu.rose_hulman.bazaar.R.string.email
-import edu.rose_hulman.bazaar.R.string.password
-import kotlinx.android.synthetic.main.activity_load.*
-import kotlinx.android.synthetic.main.activity_signin.*
 import kotlinx.android.synthetic.main.activity_signin.view.*
-import kotlinx.android.synthetic.main.activity_signup.*
 import kotlinx.android.synthetic.main.activity_signup.view.*
-import java.util.regex.Pattern
-import kotlin.math.sign
 
 class SigninActivity : AppCompatActivity() {
 

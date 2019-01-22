@@ -6,6 +6,7 @@
         android:id="@+id/container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:backgroundTint="@color/colorBackground"
         tools:context=".MainActivity"
         android:focusable="true"
         android:focusableInTouchMode="true">
@@ -47,7 +48,8 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:menu="@menu/navigation"/>
+            app:menu="@menu/navigation"
+            app:labelVisibilityMode="selected"/>
 
     <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab_add_listing"

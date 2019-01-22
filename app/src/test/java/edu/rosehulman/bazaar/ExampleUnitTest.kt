@@ -1,4 +1,4 @@
-package edu.rose_hulman.unistock.bazaar
+package edu.rosehulman.unistock.bazaar
 
 import org.junit.Test
 

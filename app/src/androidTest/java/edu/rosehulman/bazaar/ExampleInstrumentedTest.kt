@@ -1,4 +1,4 @@
-package edu.rose_hulman.unistock.bazaar
+package edu.rosehulman.unistock.bazaar
 
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4

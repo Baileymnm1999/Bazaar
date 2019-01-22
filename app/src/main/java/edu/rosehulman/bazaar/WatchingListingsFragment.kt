@@ -1,4 +1,4 @@
-package edu.rose_hulman.bazaar
+package edu.rosehulman.bazaar
 
 import android.content.Context
 import android.net.Uri

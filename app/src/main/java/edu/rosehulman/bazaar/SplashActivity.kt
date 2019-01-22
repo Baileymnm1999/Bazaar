@@ -1,4 +1,4 @@
-package edu.rose_hulman.bazaar
+package edu.rosehulman.bazaar
 
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity

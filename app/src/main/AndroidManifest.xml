@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="edu.rose_hulman.bazaar">
+          package="edu.rosehulman.bazaar">
 
     <application
             android:allowBackup="true"
@@ -10,7 +10,7 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme">
         <activity
-                android:name=".SplashActivity"
+                android:name="edu.rosehulman.bazaar.SplashActivity"
                 android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -18,15 +18,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".SigninActivity">
+        <activity android:name="edu.rosehulman.bazaar.SigninActivity">
         </activity>
         <activity
-                android:name=".MainActivity"
+                android:name="edu.rosehulman.bazaar.MainActivity"
                 android:label="@string/title_activity_main">
         </activity>
-        <activity android:name=".SettingsActivity">
-        </activity>
-        <activity android:name=".AddSchoolActivity">
+        <activity android:name="edu.rosehulman.bazaar.SettingsActivity">
         </activity>
     </application>
 
