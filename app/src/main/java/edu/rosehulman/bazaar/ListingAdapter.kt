@@ -1,6 +1,9 @@
 package edu.rosehulman.bazaar
 
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
@@ -9,8 +12,9 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import com.google.firebase.firestore.*
+import com.google.firebase.storage.FirebaseStorage
 
-class ListingAdapter(val context: Context, val domain: String, val loadRate: Long): RecyclerView.Adapter<ListingAdapter.ListingViewHolder>() {
+class ListingAdapter(val context: Context, val domain: String, val loadRate: Long, val listingAddedListener: OnListingAddedListener): RecyclerView.Adapter<ListingAdapter.ListingViewHolder>() {
 
     var listings = ArrayList<Listing>()
     var query: Query
@@ -58,9 +62,10 @@ class ListingAdapter(val context: Context, val domain: String, val loadRate: Lon
         return -1
     }
 
-    fun add(listing: Listing) {
+    private fun add(listing: Listing) {
         listings.add(0, listing)
         notifyItemInserted(0)
+        listingAddedListener.onListingAdded()
     }
 
     fun remove(listing: Listing) {
@@ -99,11 +104,16 @@ class ListingAdapter(val context: Context, val domain: String, val loadRate: Lon
         }
     }
 
+    interface OnListingAddedListener {
+        fun onListingAdded()
+    }
+
     inner class ListingViewHolder(val context: Context, itemView: View) : RecyclerView.ViewHolder(itemView) {
 
+        private val card = itemView.findViewById<CardView>(R.id.listing_card)
         private val title = itemView.findViewById<TextView>(R.id.listing_title)
         private val description = itemView.findViewById<TextView> (R.id.listing_description)
-        private val featured = itemView.findViewById<ImageView>(R.id.featured_img)
+        private val imageView = itemView.findViewById<ImageView>(R.id.featured_img)
         private val icons = HashMap<String, Int>()
 
         init {
@@ -112,14 +122,10 @@ class ListingAdapter(val context: Context, val domain: String, val loadRate: Lon
                 icons[listingType] = context.resources
                     .getIdentifier("ic_$listingType".toLowerCase(), "drawable", context.packageName)
             }
-//            icons["Textbooks"] = R.drawable.ic_textbooks
-//            icons["Electronics"] = R.drawable.ic_electronics
-//            icons["Furniture"] = R.drawable.ic_furniture
-//            icons["Service"] = R.drawable.ic_service
         }
 
 
-        fun bind(listing: Listing) {
+        fun bind(listing: Listing, imageUri: Uri? = null) {
             title.text = listing.title
             title.setBackgroundColor(0xFFFFFFFF.toInt())
             var ico = 0
@@ -127,6 +133,14 @@ class ListingAdapter(val context: Context, val domain: String, val loadRate: Lon
             title.setCompoundDrawablesWithIntrinsicBounds(ico, 0, 0, 0)
             description.text = listing.description
             description.setBackgroundColor(0xFFFFFFFF.toInt())
+            Log.d("BAZZAARR", "SETTING IMG: ${listing.image.toString()}")
+            if(listing.image == null) {
+                listing.updateImg() {
+                    imageView.setImageBitmap(listing.image)
+                }
+            }else {
+                imageView.setImageBitmap(listing.image)
+            }
             if(adapterPosition == listings.size - 1 && listings.size >= loadRate) {
                 DatabaseManager.getNextListingsFromDomain(listings.lastOrNull()?.timestamp, loadRate, domain) {
                     if(!it.isEmpty()) {
