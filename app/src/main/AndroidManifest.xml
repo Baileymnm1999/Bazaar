@@ -9,8 +9,10 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/AppTheme">
+        <activity android:name=".CreateListingActivity">
+        </activity>
         <activity
-                android:name="edu.rosehulman.bazaar.SplashActivity"
+                android:name=".SplashActivity"
                 android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -18,13 +20,15 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name="edu.rosehulman.bazaar.SigninActivity">
-        </activity>
         <activity
-                android:name="edu.rosehulman.bazaar.MainActivity"
+                android:name=".MainActivity"
                 android:label="@string/title_activity_main">
         </activity>
-        <activity android:name="edu.rosehulman.bazaar.SettingsActivity">
+        <activity android:name=".SigninActivity">
+        </activity>
+        <activity android:name=".SettingsActivity">
+        </activity>
+        <activity android:name=".AddListingActivity">
         </activity>
     </application>
 

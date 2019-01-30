@@ -1,30 +1,39 @@
 package edu.rosehulman.bazaar
 
+import android.app.AlertDialog
 import android.content.Context
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.TextView
+import android.widget.Toast
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
-import com.google.firebase.storage.FirebaseStorage
+import com.squareup.picasso.Picasso
+import kotlinx.android.synthetic.main.layout_listing.view.*
 
-class ListingAdapter(val context: Context, val domain: String, val loadRate: Long, val listingAddedListener: OnListingAddedListener): RecyclerView.Adapter<ListingAdapter.ListingViewHolder>() {
+class ListingAdapter(
+    private val context: Context,
+    private val searchField: String = "",
+    private val searchTerm: String = "",
+    private val listingAddedListener: OnListingAddedListener,
+    private val query: Query = FirebaseFirestore.getInstance().collection(DatabaseManager.LISTINGS_COLLECTION)
+        .whereEqualTo(searchField, searchTerm)
+        .orderBy("timestamp", Query.Direction.DESCENDING)
+        .limit(DatabaseManager.LOAD_RATE),
+    private val getNextQuery: Query = FirebaseFirestore.getInstance().collection(DatabaseManager.LISTINGS_COLLECTION)
+        .orderBy("timestamp", Query.Direction.DESCENDING)
+        .whereEqualTo(searchField, searchTerm)
+): RecyclerView.Adapter<ListingAdapter.ListingViewHolder>() {
 
-    var listings = ArrayList<Listing>()
-    var query: Query
+    private var listings = ArrayList<Listing>()
+    private var loadRate = DatabaseManager.LOAD_RATE
 
     init {
-        query = FirebaseFirestore.getInstance().collection("listings")
-            .whereEqualTo("domain", domain)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(if (loadRate>listings.size) loadRate else listings.size as Long)
-        query.addSnapshotListener { snapshot, firestoreException ->
+        query.addSnapshotListener { snapshot, _ ->
                 if(snapshot != null) processListingUpdates(snapshot)
             }
     }
@@ -40,6 +49,9 @@ class ListingAdapter(val context: Context, val domain: String, val loadRate: Lon
 
     private fun processListingUpdates(snapshot: QuerySnapshot) {
         for (it in snapshot.documentChanges.reversed()) {
+
+            Log.d("BAZZAAR", it.document.toObject(Listing::class.java).toString())
+            Log.d("BAZZAAR", it.type.toString())
             when(it.type) {
                 DocumentChange.Type.ADDED -> {
                     add(it.document.toObject(Listing::class.java))
@@ -68,15 +80,16 @@ class ListingAdapter(val context: Context, val domain: String, val loadRate: Lon
         listingAddedListener.onListingAdded()
     }
 
-    fun remove(listing: Listing) {
+    private fun remove(listing: Listing) {
         val pos = positionForId(listing.id)
         if(pos != -1) {
+//            Log.d("BAZZAAR", listing.toString())
             listings.removeAt(pos)
-            notifyItemRemoved(pos)
+            notifyDataSetChanged()
         }
     }
 
-    fun update(listing: Listing) {
+    private fun update(listing: Listing) {
         val pos = positionForId(listing.id)
         if(pos != -1) {
             listings[pos] = listing
@@ -96,12 +109,13 @@ class ListingAdapter(val context: Context, val domain: String, val loadRate: Lon
         onCompleteListener()
     }
 
-    fun onBottomReached() {
-        DatabaseManager.getNextListingsFromDomain(listings.lastOrNull()?.timestamp, loadRate, domain) {
-            Log.d("BAZZAARR", "BOTTOM")
-            listings.addAll(it)
-            notifyDataSetChanged()
-        }
+    fun searchNextListings(timestamp: Timestamp?, searchField: String, searchTerm: String, onCompleteListener: (List<Listing>) -> Unit) {
+        getNextQuery
+            .whereLessThan("timestamp", timestamp ?: DatabaseManager.START_OF_TIME)
+            .limit(DatabaseManager.LOAD_RATE)
+            .get().addOnSuccessListener {
+                onCompleteListener(it.toObjects(Listing::class.java))
+            }
     }
 
     interface OnListingAddedListener {
@@ -110,39 +124,78 @@ class ListingAdapter(val context: Context, val domain: String, val loadRate: Lon
 
     inner class ListingViewHolder(val context: Context, itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-        private val card = itemView.findViewById<CardView>(R.id.listing_card)
-        private val title = itemView.findViewById<TextView>(R.id.listing_title)
-        private val description = itemView.findViewById<TextView> (R.id.listing_description)
-        private val imageView = itemView.findViewById<ImageView>(R.id.featured_img)
+        private val card = itemView.listing_card
+        private val author = itemView.listing_author
+        private val title = itemView.listing_title
+        private val price = itemView.listing_price
+        private val imageView = itemView.featured_img
+        private val watchBtn = itemView.watch_btn
         private val icons = HashMap<String, Int>()
 
         init {
             val types = context.resources.getStringArray(R.array.listing_item_types)
+            val userId = FirebaseAuth.getInstance().currentUser!!.uid
+
             types.forEach { listingType ->
                 icons[listingType] = context.resources
                     .getIdentifier("ic_$listingType".toLowerCase(), "drawable", context.packageName)
             }
+
+            itemView.watch_btn.setOnClickListener {
+                if(listings[adapterPosition].usersWatching.contains(userId)) {
+                    listings[adapterPosition].usersWatching.remove(userId)
+                    DatabaseManager.updateListing(listings[adapterPosition])
+                    Toast.makeText(context, "No longer watching", Toast.LENGTH_SHORT).show()
+                }else {
+                    listings[adapterPosition].usersWatching.add(userId)
+                    DatabaseManager.updateListing(listings[adapterPosition])
+                    Toast.makeText(context, "Now watching this item!", Toast.LENGTH_SHORT).show()
+                }
+
+                DatabaseManager.updateListing(listings[adapterPosition])
+            }
+
+
+            itemView.setOnLongClickListener {
+                if(FirebaseAuth.getInstance().currentUser?.uid == userId) {
+                    val builder = AlertDialog.Builder(context)
+                    builder.setTitle(listings[adapterPosition].title)
+                    builder.setPositiveButton("Mark as sold") { _, _ ->
+                        DatabaseManager.markAsSold(listings[adapterPosition])
+                    }
+                    builder.setNegativeButton("Delete item") { _, _ ->
+                        DatabaseManager.deleteListing(listings[adapterPosition])
+                    }
+                    builder.setNeutralButton(android.R.string.cancel) { _, _ -> }
+                    builder.create().show()
+                }
+                true
+            }
         }
 
 
-        fun bind(listing: Listing, imageUri: Uri? = null) {
+        fun bind(listing: Listing) {
+            val ico = icons[listing.type] ?: 0
+            author.setCompoundDrawablesWithIntrinsicBounds(0, 0, ico, 0)
+            author.text = listing.author
             title.text = listing.title
-            title.setBackgroundColor(0xFFFFFFFF.toInt())
-            var ico = 0
-            if(icons.containsKey(listing.type)) ico = icons.get(listing.type)!!
-            title.setCompoundDrawablesWithIntrinsicBounds(ico, 0, 0, 0)
-            description.text = listing.description
-            description.setBackgroundColor(0xFFFFFFFF.toInt())
-            Log.d("BAZZAARR", "SETTING IMG: ${listing.image.toString()}")
-            if(listing.image == null) {
-                listing.updateImg() {
-                    imageView.setImageBitmap(listing.image)
-                }
+            Log.d("BAZZAAR", listing.price.toString())
+            if(listing.price > -1) {
+                price.text = "$${listing.price}"
+            }
+
+
+
+
+            Picasso.with(context).load(listing.images.firstOrNull()).into(imageView)
+
+            if(listing.usersWatching.contains(FirebaseAuth.getInstance().currentUser!!.uid)) {
+                watchBtn.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_star_watching, 0, 0, 0)
             }else {
-                imageView.setImageBitmap(listing.image)
+                watchBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_star, 0, 0, 0)
             }
             if(adapterPosition == listings.size - 1 && listings.size >= loadRate) {
-                DatabaseManager.getNextListingsFromDomain(listings.lastOrNull()?.timestamp, loadRate, domain) {
+                searchNextListings(listings.lastOrNull()?.timestamp, searchField, searchTerm) {
                     if(!it.isEmpty()) {
                         listings.addAll(it)
                         notifyDataSetChanged()

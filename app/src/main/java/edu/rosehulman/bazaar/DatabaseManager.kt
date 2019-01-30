@@ -4,94 +4,116 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
+import com.google.android.gms.tasks.Continuation
+import com.google.android.gms.tasks.Task
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.UploadTask
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.lang.Exception
+import java.util.concurrent.CountDownLatch
 
 class DatabaseManager {
 
     companion object {
 
+        const val LOAD_RATE = 10L
+        const val USER_COLLECTION = "users"
+        const val SCHOOL_COLLECTION = "schools"
+        const val LISTINGS_COLLECTION = "listings"
+        private const val SOLD_COLLECTION = "sold"
+        val START_OF_TIME = Timestamp(0, 0)
+
         fun createUser(user: User) {
-            if(user.uid.isEmpty()) {
-                // TODO: Write exception to throw
-            }else {
-                FirebaseFirestore.getInstance().collection("users")
-                    .document(user.uid).set(user)
-            }
+            FirebaseFirestore.getInstance().collection(USER_COLLECTION).document(user.uid).set(user)
+        }
+
+        fun getUser(onCompleteListener: (User) -> Unit) {
+            FirebaseFirestore.getInstance().collection(USER_COLLECTION).document(FirebaseAuth.getInstance().currentUser!!.uid)
+                .get().addOnSuccessListener {
+                    if(it != null) onCompleteListener(it.toObject(User::class.java)!!)
+                }
         }
 
         fun createSchool(school: School) {
-            if(school.domain.isEmpty()) {
-                // TODO: Write exception to throw
-            }else {
-                Log.d("BAZZAARR", school.domain.toString())
-                FirebaseFirestore.getInstance().collection("schools")
-                    .document(school.domain).set(school)
-            }
+            FirebaseFirestore.getInstance().collection(SCHOOL_COLLECTION).document(school.domain).set(school)
         }
 
         fun getSchool(user: User, onCompleteListener: (School?) -> Unit) {
-            FirebaseFirestore.getInstance().collection("schools")
-                .document(user.domain)
-                .get()
+            FirebaseFirestore.getInstance().collection(SCHOOL_COLLECTION).document(user.domain).get()
                 .addOnCompleteListener {
                     onCompleteListener(it.result?.toObject(School::class.java))
                 }
         }
 
-        fun uploadListing(listing: Listing, image: Bitmap?, imageUri: Uri?, onCompleteListener:  () -> Unit? = {}) {
-            val listingRef = FirebaseFirestore.getInstance().collection("listings").document()
+        fun markAsSold(listing: Listing) {
+            val newListingRef = FirebaseFirestore.getInstance().collection(SOLD_COLLECTION).document()
+            val oldListing = Listing.fromListing(listing)
+            val newListing = Listing.fromListing(listing)
+            newListing.id = newListingRef.id
+            newListingRef.set(newListing)
+            deleteListing(oldListing)
+        }
+
+        private fun uploadImages(listing: Listing, images: ArrayList<ByteArray>, index: Int, onCompleteListener: () -> Unit) {
             val storageRef = FirebaseStorage.getInstance().reference
-            listing.id = listingRef.id
-            if(image != null && imageUri != null) {
-//                listing.image = image
-                listing.images.add("images/${listing.id}/0")
-                storageRef.child(listing.images.last()).putFile(imageUri).addOnSuccessListener { _ ->
-                    listingRef.set(listing).addOnCompleteListener {
+
+            val imageRef = storageRef.child("images/${listing.id}/$index")
+            val uploadTask = imageRef.putBytes(images[index])
+            uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
+                if (!task.isSuccessful) {
+                    task.exception?.let { exception ->
+                        throw exception
+                    }
+                }
+                return@Continuation imageRef.downloadUrl
+            }).addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    listing.images.add(task.result.toString())
+                    if(index + 1 < images.size) {
+                        uploadImages(listing, images, index + 1, onCompleteListener)
+                    }else if(index + 1 == images.size)  {
                         onCompleteListener()
                     }
+                } else {
+                    // TODO:("Write failed to upload exception")
                 }
             }
         }
 
-        fun getListingUpdates(count: Long, domain: String, onCompleteListener: (List<Listing>) -> Unit) {
-            FirebaseFirestore.getInstance().collection("listings")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .whereEqualTo("domain", domain)
-                .limit(count)
-                .get().addOnCompleteListener {
-                    val result = it.result
-                    if(result != null) {
-                        val listings = result.toObjects(Listing::class.java)
-                        listings.forEach { listing ->
-                            listing.images.forEach { imageUri ->
-                                FirebaseStorage.getInstance().reference.child(imageUri).getBytes(1024*1024).addOnCompleteListener {
-                                    Log.d("BAZZAARR", it.result.toString())
-                                    if(it.result != null) {
-                                        listing.image = BitmapFactory.decodeByteArray(it.result, 0, it.result!!.size)
-                                    }
-                                }
-                            }
-                        }
-                        onCompleteListener(listings)
+        fun uploadListing(listing: Listing, images: ArrayList<ByteArray>, onCompleteListener: () -> Unit = {}) {
+            val listingRef = FirebaseFirestore.getInstance().collection(LISTINGS_COLLECTION).document()
+            listing.id = listingRef.id
+
+            if(images.size > 0) {
+                uploadImages(listing, images, 0) {
+                    listingRef.set(listing).addOnSuccessListener {
+                        onCompleteListener()
                     }
+                }
+            }else {
+                listingRef.set(listing).addOnSuccessListener {
+                    onCompleteListener()
+                }
+            }
+        }
+
+        fun updateListing(listing: Listing, onCompleteListener: () -> Unit = {}) {
+            FirebaseFirestore.getInstance().collection(LISTINGS_COLLECTION).document(listing.id).set(listing)
+                .addOnSuccessListener {
+                    onCompleteListener()
                 }
         }
 
-        fun getNextListingsFromDomain(timestamp: Timestamp?,count: Long, domain: String, onCompleteListener: (List<Listing>) -> Unit) {
-            FirebaseFirestore.getInstance().collection("listings")
-                .whereLessThan("timestamp", timestamp ?: Timestamp(0,0))
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .whereEqualTo("domain", domain)
-                .limit(count)
-                .get().addOnCompleteListener {
-                    val result = it.result
-                    if(result != null) {
-                        onCompleteListener(result.toObjects(Listing::class.java))
-                    }
-                }
+        fun deleteListing(listing: Listing) {
+            listing.images.forEach {
+                FirebaseStorage.getInstance().getReferenceFromUrl(it).delete()
+            }
+            FirebaseFirestore.getInstance().collection(LISTINGS_COLLECTION).document(listing.id).delete()
         }
     }
 }

@@ -18,7 +18,10 @@
                 android:layout_height="match_parent"
                 app:layoutManager="android.support.v7.widget.LinearLayoutManager"
                 app:layout_behavior="@string/appbar_scrolling_view_behavior"
-                android:background="@color/colorBackground" />
+                android:background="@color/colorBackground"
+                android:paddingBottom="72dp"
+                android:clipToPadding="false"
+                android:scrollbarStyle="outsideOverlay"/>
 
     </android.support.v4.widget.SwipeRefreshLayout>
 </RelativeLayout>

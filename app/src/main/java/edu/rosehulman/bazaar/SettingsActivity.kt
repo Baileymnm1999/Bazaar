@@ -9,6 +9,7 @@ import kotlinx.android.synthetic.main.activity_settings.*
 class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        overridePendingTransition(R.anim.abc_slide_in_top, R.anim.nothing)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
@@ -28,5 +29,12 @@ class SettingsActivity : AppCompatActivity() {
             builder.create().show()
         }
 
+    }
+
+    override fun onPause() {
+        if(isFinishing) {
+            overridePendingTransition(R.anim.nothing, R.anim.abc_slide_out_top)
+        }
+        super.onPause()
     }
 }
