@@ -9,17 +9,17 @@ import kotlinx.android.synthetic.main.activity_settings.*
 class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        overridePendingTransition(R.anim.abc_slide_in_top, R.anim.nothing)
+        overridePendingTransition(R.anim.slide_in_top, R.anim.nothing)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
         logout_btn.setOnClickListener {
-            var builder = AlertDialog.Builder(this)
+            val builder = AlertDialog.Builder(this)
             builder.setTitle("Sign out?")
             builder.setMessage("Are you sure you want to sign out?")
             builder.setIcon(R.drawable.ic_exit_to_app_black_24dp)
             builder.setPositiveButton(android.R.string.yes) { _, _ ->
-                var auth = FirebaseAuth.getInstance()
+                val auth = FirebaseAuth.getInstance()
                 auth.signOut()
                 finish()
             }
@@ -33,7 +33,7 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onPause() {
         if(isFinishing) {
-            overridePendingTransition(R.anim.nothing, R.anim.abc_slide_out_top)
+            overridePendingTransition(R.anim.nothing, R.anim.slide_out_top)
         }
         super.onPause()
     }

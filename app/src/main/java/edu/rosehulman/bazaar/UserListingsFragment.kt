@@ -1,20 +1,21 @@
 package edu.rosehulman.bazaar
 
 import android.content.Context
-import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.fragment_user_listings.view.*
-import kotlin.math.max
-import kotlin.math.min
+import kotlinx.android.synthetic.main.fragment_listings.view.*
 
 private const val ARG_USER = "USER"
 
+/*
+*   Fragment used in the 'my listings' tab of the dashboard.
+*   Manages Listing adapter using custom query to get listings
+*   which were authored by the user
+*/
 class UserListingsFragment : Fragment() {
     private var user: User = User()
     private var listener: OnUserFragmentScrollListener? = null
@@ -27,26 +28,30 @@ class UserListingsFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.fragment_user_listings, container, false)
+        val view = inflater.inflate(R.layout.fragment_listings, container, false)
 
+        // Listener to scroll to top if user posts new listing
+        val listingAddedListener = object: ListingAdapter.OnListingAddedListener {
+            override fun onListingAdded(listing: Listing) = view.listings_recycler.scrollToPosition(0)
+        }
+
+        // Create listing adapter which searched author field for the user's name
         val adapter = ListingAdapter(
             context!!,
-            "author",
-            user.name,
-            object: ListingAdapter.OnListingAddedListener {
-                override fun onListingAdded() = view.user_listings_recycler.scrollToPosition(0)
-            }
+            "authorId",
+            user.uid,
+            listingAddedListener
         )
-        view.user_listings_recycler.adapter = adapter
+        view.listings_recycler.adapter = adapter
 
-        view.user_listings_refresher.setOnRefreshListener {
+        view.listings_refresher.setOnRefreshListener {
             adapter.forceRefresh {
-                view.user_listings_refresher.isRefreshing = false
-                view.user_listings_recycler.scrollToPosition(0)
+                view.listings_refresher.isRefreshing = false
+                view.listings_recycler.scrollToPosition(0)
             }
         }
 
-        view.user_listings_recycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+        view.listings_recycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 listener?.onScroll(recyclerView, dx, dy)
             }
@@ -73,6 +78,10 @@ class UserListingsFragment : Fragment() {
         fun onScroll(recyclerView: RecyclerView, dx: Int, dy: Int)
     }
 
+    /*
+    *   Factory method to create new fragment and give it a user to
+    *   be used in the database query
+     */
     companion object {
         @JvmStatic
         fun newInstance(user: User) =

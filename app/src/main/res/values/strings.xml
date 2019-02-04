@@ -9,7 +9,7 @@
     <string name="already_have_an_accout_sign_in">Already have an accout? Sign in</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="title_messages">Messages</string>
     <string name="first_name">First name</string>
     <string name="last_name">Last name</string>
     <string name="title_activity_settings">Settings</string>

@@ -11,8 +11,8 @@ import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
-import kotlinx.android.synthetic.main.activity_signin.view.*
-import kotlinx.android.synthetic.main.activity_signup.view.*
+import kotlinx.android.synthetic.main.layout_signin.view.*
+import kotlinx.android.synthetic.main.layout_signup.view.*
 
 class SigninActivity : AppCompatActivity() {
 
@@ -29,8 +29,8 @@ class SigninActivity : AppCompatActivity() {
         user = auth.currentUser
 
         // Inflate sign in and sign up views to switch between
-        signinView = LayoutInflater.from(this).inflate(R.layout.activity_signin, null)
-        signupView = LayoutInflater.from(this).inflate(R.layout.activity_signup, null)
+        signinView = LayoutInflater.from(this).inflate(R.layout.layout_signin, null)
+        signupView = LayoutInflater.from(this).inflate(R.layout.layout_signup, null)
 
         // Switch to sign up
         signinView.signup_link.setOnClickListener {
@@ -39,8 +39,8 @@ class SigninActivity : AppCompatActivity() {
 
         // Sign in
         signinView.signin_btn.setOnClickListener {
-            var email = signinView.email_text_signin.text.toString()
-            var password = signinView.password_text_signin.text.toString()
+            val email = signinView.email_text_signin.text.toString()
+            val password = signinView.password_text_signin.text.toString()
             if(email.isEmpty()) {
                 signinView.email_text_signin.error = "Please enter your email"
             }
@@ -56,15 +56,16 @@ class SigninActivity : AppCompatActivity() {
         signupView.signin_link.setOnClickListener {
             setContentView(signinView)
         }
+
         // Sign up
         signupView.signup_btn.setOnClickListener {
-            var email = signupView.email_text_signup.text.toString()
-            var password = signupView.password_text_signup.text.toString()
-            var displayName = signupView.first_name_text_signup.text.toString() + " " + signupView.last_name_text_signup.text.toString()
+            val email = signupView.email_text_signup.text.toString()
+            val password = signupView.password_text_signup.text.toString()
+            val displayName = signupView.first_name_text_signup.text.toString() + " " + signupView.last_name_text_signup.text.toString()
             if(password.isEmpty()) {
                 signupView.password_text_signup.error = "Please enter a password"
             }
-            if(displayName.equals(" ")) {
+            if(displayName == " ") {
                 signupView.first_name_text_signup.error = "Please enter your name"
             }
             if(email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches() || !email.contains(".edu")) {
@@ -77,6 +78,7 @@ class SigninActivity : AppCompatActivity() {
         updateUI(user)
     }
 
+    // Checks if somehow user is already logged in, otherwise goes to signin screen
     private fun updateUI(user: FirebaseUser?) {
         if(user != null){
             startActivity(Intent(this, MainActivity::class.java))
@@ -91,12 +93,10 @@ class SigninActivity : AppCompatActivity() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    Log.d("BAZZAR", "sign in success")
                     user = auth.currentUser
                     updateUI(user)
                 } else {
                     signinView.signin_load.visibility = View.GONE
-                    Log.w("BAZAAR", "sign in fail")
                     Toast.makeText(this, "Authentication failed", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -107,7 +107,6 @@ class SigninActivity : AppCompatActivity() {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    Log.d("BAZAAR", "create user with email success")
                     user = auth.currentUser
                     if (user != null) {
                         user!!.sendEmailVerification()
@@ -115,8 +114,8 @@ class SigninActivity : AppCompatActivity() {
                         val dbUser = User(user!!.uid,"$firstName $lastName", email, email.substring(email.indexOf('@')+1, email.length))
                         DatabaseManager.createUser(dbUser)
                         // Update display name
-                        var profileUpdate = UserProfileChangeRequest.Builder()
-                            .setDisplayName(firstName + " " + lastName)
+                        val profileUpdate = UserProfileChangeRequest.Builder()
+                            .setDisplayName("$firstName $lastName")
                             .build()
                         user!!.updateProfile(profileUpdate).addOnCompleteListener {}
                         updateUI(user)

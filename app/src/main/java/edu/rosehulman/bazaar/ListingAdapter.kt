@@ -2,17 +2,20 @@ package edu.rosehulman.bazaar
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
+import android.support.v4.content.ContextCompat
 import android.support.v7.widget.RecyclerView
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.Toast
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
-import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.layout_listing.view.*
 
 class ListingAdapter(
@@ -77,13 +80,12 @@ class ListingAdapter(
     private fun add(listing: Listing) {
         listings.add(0, listing)
         notifyItemInserted(0)
-        listingAddedListener.onListingAdded()
+        listingAddedListener.onListingAdded(listing)
     }
 
     private fun remove(listing: Listing) {
         val pos = positionForId(listing.id)
         if(pos != -1) {
-//            Log.d("BAZZAAR", listing.toString())
             listings.removeAt(pos)
             notifyDataSetChanged()
         }
@@ -95,13 +97,6 @@ class ListingAdapter(
             listings[pos] = listing
             notifyItemChanged(pos)
         }
-    }
-
-    fun has(listingToFind: Listing): Boolean {
-        for(listing in listings) {
-            if(listing.equals(listingToFind)) return true
-        }
-        return false
     }
 
     fun forceRefresh(onCompleteListener: () -> Unit = {}) {
@@ -119,16 +114,14 @@ class ListingAdapter(
     }
 
     interface OnListingAddedListener {
-        fun onListingAdded()
+        fun onListingAdded(listing: Listing)
     }
 
     inner class ListingViewHolder(val context: Context, itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-        private val card = itemView.listing_card
         private val author = itemView.listing_author
         private val title = itemView.listing_title
-        private val price = itemView.listing_price
-        private val imageView = itemView.featured_img
+        private val description = itemView.listing_description
+        private val imagePager = itemView.img_pager
         private val watchBtn = itemView.watch_btn
         private val icons = HashMap<String, Int>()
 
@@ -157,9 +150,9 @@ class ListingAdapter(
 
 
             itemView.setOnLongClickListener {
-                if(FirebaseAuth.getInstance().currentUser?.uid == userId) {
-                    val builder = AlertDialog.Builder(context)
-                    builder.setTitle(listings[adapterPosition].title)
+                val builder = AlertDialog.Builder(context)
+                builder.setTitle(listings[adapterPosition].title)
+                if(listings[adapterPosition].authorId == userId) {
                     builder.setPositiveButton("Mark as sold") { _, _ ->
                         DatabaseManager.markAsSold(listings[adapterPosition])
                     }
@@ -167,33 +160,59 @@ class ListingAdapter(
                         DatabaseManager.deleteListing(listings[adapterPosition])
                     }
                     builder.setNeutralButton(android.R.string.cancel) { _, _ -> }
-                    builder.create().show()
+                }else {
+                    builder.setPositiveButton("View post") { _, _ ->
+                        // TODO:("View post implementation")
+                    }
                 }
+                builder.create().show()
                 true
             }
         }
 
 
         fun bind(listing: Listing) {
+            // Set icons and author
             val ico = icons[listing.type] ?: 0
             author.setCompoundDrawablesWithIntrinsicBounds(0, 0, ico, 0)
             author.text = listing.author
-            title.text = listing.title
-            Log.d("BAZZAAR", listing.price.toString())
-            if(listing.price > -1) {
-                price.text = "$${listing.price}"
+
+            // Format title with price, set title and description
+            val spannable = SpannableString("${listing.title} $${listing.price}")
+            val span = ForegroundColorSpan(ContextCompat.getColor(context, android.R.color.holo_green_dark))
+            spannable.setSpan(span, listing.title.length, spannable.length, Spannable.SPAN_EXCLUSIVE_INCLUSIVE)
+            title.text = spannable
+            description.text = listing.description
+
+            // Hide empty descriptions
+            if(listing.description == "") {
+                description.layoutParams.height = 0
             }
 
+            // Hide empty image space
+            if(listing.images.isEmpty()) {
+                imagePager.layoutParams.height = 0;
+            }
 
+            // Create adapter for image pager and set
+            val adapter = PhotoPagerAdapter(context, listing.images)
+            imagePager.adapter = adapter
 
+//             TODO("Fullscreen image gallery")
+//            imagePager.setOnClickListener {
+//                val galleryIntent = Intent(context, MainActivity::class.java)
+//                galleryIntent.putStringArrayListExtra("PHOTOS", adapter.getImages())
+//                context.startActivity(galleryIntent)
+//            }
 
-            Picasso.with(context).load(listing.images.firstOrNull()).into(imageView)
-
+            // Set watching button color correctly
             if(listing.usersWatching.contains(FirebaseAuth.getInstance().currentUser!!.uid)) {
                 watchBtn.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_star_watching, 0, 0, 0)
             }else {
                 watchBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_star, 0, 0, 0)
             }
+
+            // If this is the last item, load the next x items, x is load rate in Databasemanager
             if(adapterPosition == listings.size - 1 && listings.size >= loadRate) {
                 searchNextListings(listings.lastOrNull()?.timestamp, searchField, searchTerm) {
                     if(!it.isEmpty()) {

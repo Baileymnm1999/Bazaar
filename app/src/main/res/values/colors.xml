@@ -4,7 +4,7 @@
     <color name="colorPrimaryDark">#6CB4EE</color>
     <color name="colorPrimaryDarkOld">#ff6932</color>
     <color name="colorListingIcons">@color/colorPrimaryDark</color>
-    <color name="colorAccent">#222222</color>
+    <color name="colorAccent">#333333</color>
     <color name="colorBackground">#F2F2F2</color>
     <color name="colorInteract">#CCCCCC</color>
     <color name="colorForeground">@color/colorPrimary</color>

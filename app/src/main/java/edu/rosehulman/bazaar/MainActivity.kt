@@ -1,30 +1,20 @@
 package edu.rosehulman.bazaar
 
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
 import android.support.design.widget.TabLayout
-import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.RecyclerView.OnScrollListener
-import android.view.LayoutInflater
-import android.view.View
-import android.view.animation.Animation
 import android.widget.ViewFlipper
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.layout_feed.*
-import android.widget.ArrayAdapter
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.android.synthetic.main.activity_add_listing.view.*
 import kotlinx.android.synthetic.main.layout_dash.*
-import java.lang.Math.max
-import java.lang.Math.min
+import kotlinx.android.synthetic.main.layout_verify_email.*
 
 class MainActivity : AppCompatActivity(), UserListingsFragment.OnUserFragmentScrollListener, WatchingListingsFragment.OnWatchingFragmentScrollListener {
 
@@ -66,11 +56,8 @@ class MainActivity : AppCompatActivity(), UserListingsFragment.OnUserFragmentScr
         }
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
 
         // Logout if user goes null
         auth.addAuthStateListener {
@@ -80,8 +67,31 @@ class MainActivity : AppCompatActivity(), UserListingsFragment.OnUserFragmentScr
             }
         }
 
+        if(auth.currentUser?.isEmailVerified == true) {
+            setContentView(R.layout.activity_main)
+            initializeActivity()
+        }else {
+            auth.currentUser?.reload()?.addOnSuccessListener {
+                if(auth.currentUser?.isEmailVerified == true) {
+                    setContentView(R.layout.activity_main)
+                    initializeActivity()
+                }else {
+                    setContentView(R.layout.layout_verify_email)
+                    refresh_btn.setOnClickListener {
+                        recreate() // TODO("Make this look better")
+                    }
+                }
+            }
+        }
+    }
 
-        if(auth.currentUser != null) {
+    override fun onScroll(recyclerView: RecyclerView, dx: Int, dy: Int) {
+        onScrollListener.onScrolled(recyclerView, dx, dy)
+    }
+
+    // TODO("Break this up for maintainability")
+    private fun initializeActivity() {
+        if(auth.currentUser != null && auth.currentUser?.isEmailVerified == true) {
             data.collection(DatabaseManager.USER_COLLECTION).document(auth.currentUser!!.uid)
                 .addSnapshotListener { userSnapshot, _ ->
                     dbUser = userSnapshot?.toObject(User::class.java)
@@ -92,13 +102,15 @@ class MainActivity : AppCompatActivity(), UserListingsFragment.OnUserFragmentScr
                                 if(schoolSnapshot != null) {
                                     dbSchool = schoolSnapshot.toObject(School::class.java)!!
 
+                                    val listingAddedListener = object: ListingAdapter.OnListingAddedListener {
+                                        override fun onListingAdded(listing: Listing) = feed_recycler.scrollToPosition(0)
+                                    }
+
                                     val feedAdapter = ListingAdapter(
                                         this,
                                         "domain",
                                         dbUser!!.domain,
-                                        object: ListingAdapter.OnListingAddedListener {
-                                        override fun onListingAdded() = feed_recycler.scrollToPosition(0)
-                                    })
+                                        listingAddedListener)
                                     feed_recycler.adapter = feedAdapter
 
                                     feed_refresher.setOnRefreshListener {
@@ -138,12 +150,7 @@ class MainActivity : AppCompatActivity(), UserListingsFragment.OnUserFragmentScr
         }
     }
 
-    override fun onScroll(recyclerView: RecyclerView, dx: Int, dy: Int) {
-        onScrollListener.onScrolled(recyclerView, dx, dy)
-    }
-
     private fun initializeDashboard() {
-
         val pagerAdapter = PagerAdapter(supportFragmentManager, dbUser!!)
         dash_pager.adapter = pagerAdapter
         dash_pager.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(dash_tab))
@@ -152,12 +159,9 @@ class MainActivity : AppCompatActivity(), UserListingsFragment.OnUserFragmentScr
                 if(tab != null) dash_pager.currentItem = tab.position
             }
 
-            override fun onTabReselected(p0: TabLayout.Tab?) {
-
-            }
+            override fun onTabReselected(p0: TabLayout.Tab?) {}
 
             override fun onTabUnselected(p0: TabLayout.Tab?) {}
-
         })
     }
 }
