@@ -1,6 +1,7 @@
 package edu.rosehulman.bazaar
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.ServerTimestamp
 
 data class Listing(
@@ -15,4 +16,5 @@ data class Listing(
     val usersWatching: ArrayList<String> = ArrayList(),
     var id: String = "") {
     @ServerTimestamp var timestamp: Timestamp? = null
+    @get: Exclude var adapter: PhotoPagerAdapter? = null
 }

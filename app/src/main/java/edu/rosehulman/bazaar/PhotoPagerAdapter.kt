@@ -20,7 +20,7 @@ open class PhotoPagerAdapter(val context: Context, val images: ArrayList<String>
         // Create image view and add image
         val imageView = ImageView(context)
         Picasso.with(context).load(images[position]).fit().centerCrop().into(imageView)
-
+        
         // Open gallery view if image is clicked on
         imageView.setOnClickListener {
             val galleryIntent = Intent(context, GalleryActivity::class.java)

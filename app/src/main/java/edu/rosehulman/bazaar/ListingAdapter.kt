@@ -195,8 +195,8 @@ class ListingAdapter(
             }
 
             // Create adapter for image pager and set
-            val adapter = PhotoPagerAdapter(context, listing.images)
-            imagePager.adapter = adapter
+            if(listing.adapter == null) listing.adapter = PhotoPagerAdapter(context, listing.images)
+            imagePager.adapter = listing.adapter
 
             // Set watching button color correctly
             if(listing.usersWatching.contains(FirebaseAuth.getInstance().currentUser!!.uid)) {
