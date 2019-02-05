@@ -198,13 +198,6 @@ class ListingAdapter(
             val adapter = PhotoPagerAdapter(context, listing.images)
             imagePager.adapter = adapter
 
-//             TODO("Fullscreen image gallery")
-//            imagePager.setOnClickListener {
-//                val galleryIntent = Intent(context, MainActivity::class.java)
-//                galleryIntent.putStringArrayListExtra("PHOTOS", adapter.getImages())
-//                context.startActivity(galleryIntent)
-//            }
-
             // Set watching button color correctly
             if(listing.usersWatching.contains(FirebaseAuth.getInstance().currentUser!!.uid)) {
                 watchBtn.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_star_watching, 0, 0, 0)
