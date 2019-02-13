@@ -14,6 +14,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.layout_feed.*
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.android.synthetic.main.layout_dash.*
+import kotlinx.android.synthetic.main.layout_inbox.*
 import kotlinx.android.synthetic.main.layout_verify_email.*
 
 class MainActivity : AppCompatActivity(), UserListingsFragment.OnUserFragmentScrollListener, WatchingListingsFragment.OnWatchingFragmentScrollListener {
@@ -121,6 +122,7 @@ class MainActivity : AppCompatActivity(), UserListingsFragment.OnUserFragmentScr
                                     }
 
                                     initializeDashboard()
+                                    initializeMessages()
 
                                 } else {
                                     val users = ArrayList<String>()
@@ -163,5 +165,14 @@ class MainActivity : AppCompatActivity(), UserListingsFragment.OnUserFragmentScr
 
             override fun onTabUnselected(p0: TabLayout.Tab?) {}
         })
+    }
+
+    private fun initializeMessages() {
+        val listener = object: ThreadAdapter.OnThreadAddedListener{
+            override fun onThreadAdded(thread: Thread) = inbox_recycler.scrollToPosition(0)
+        }
+
+        val threadAdapter = ThreadAdapter(this, "members", dbUser!!.uid, listener)
+        inbox_recycler.adapter = threadAdapter
     }
 }

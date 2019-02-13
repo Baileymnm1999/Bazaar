@@ -52,9 +52,6 @@ class ListingAdapter(
 
     private fun processListingUpdates(snapshot: QuerySnapshot) {
         for (it in snapshot.documentChanges.reversed()) {
-
-            Log.d("BAZZAAR", it.document.toObject(Listing::class.java).toString())
-            Log.d("BAZZAAR", it.type.toString())
             when(it.type) {
                 DocumentChange.Type.ADDED -> {
                     add(it.document.toObject(Listing::class.java))
@@ -124,10 +121,10 @@ class ListingAdapter(
         private val imagePager = itemView.img_pager
         private val watchBtn = itemView.watch_btn
         private val icons = HashMap<String, Int>()
+        private val userId = FirebaseAuth.getInstance().currentUser!!.uid
 
         init {
             val types = context.resources.getStringArray(R.array.listing_item_types)
-            val userId = FirebaseAuth.getInstance().currentUser!!.uid
 
             types.forEach { listingType ->
                 icons[listingType] = context.resources
@@ -135,37 +132,15 @@ class ListingAdapter(
             }
 
             itemView.watch_btn.setOnClickListener {
-                if(listings[adapterPosition].usersWatching.contains(userId)) {
-                    listings[adapterPosition].usersWatching.remove(userId)
-                    DatabaseManager.updateListing(listings[adapterPosition])
-                    Toast.makeText(context, "No longer watching", Toast.LENGTH_SHORT).show()
-                }else {
-                    listings[adapterPosition].usersWatching.add(userId)
-                    DatabaseManager.updateListing(listings[adapterPosition])
-                    Toast.makeText(context, "Now watching this item!", Toast.LENGTH_SHORT).show()
-                }
-
-                DatabaseManager.updateListing(listings[adapterPosition])
+                toggleWatching()
             }
 
+            itemView.messege_btn.setOnClickListener {
+                sendMessage()
+            }
 
             itemView.setOnLongClickListener {
-                val builder = AlertDialog.Builder(context)
-                builder.setTitle(listings[adapterPosition].title)
-                if(listings[adapterPosition].authorId == userId) {
-                    builder.setPositiveButton("Mark as sold") { _, _ ->
-                        DatabaseManager.markAsSold(listings[adapterPosition])
-                    }
-                    builder.setNegativeButton("Delete item") { _, _ ->
-                        DatabaseManager.deleteListing(listings[adapterPosition])
-                    }
-                    builder.setNeutralButton(android.R.string.cancel) { _, _ -> }
-                }else {
-                    builder.setPositiveButton("View post") { _, _ ->
-                        // TODO:("View post implementation")
-                    }
-                }
-                builder.create().show()
+                handleLongClick()
                 true
             }
         }
@@ -214,6 +189,45 @@ class ListingAdapter(
                     }
                 }
             }
+        }
+
+        private fun toggleWatching() {
+            if(listings[adapterPosition].usersWatching.contains(userId)) {
+                listings[adapterPosition].usersWatching.remove(userId)
+                DatabaseManager.updateListing(listings[adapterPosition])
+                Toast.makeText(context, "No longer watching", Toast.LENGTH_SHORT).show()
+            }else {
+                listings[adapterPosition].usersWatching.add(userId)
+                DatabaseManager.updateListing(listings[adapterPosition])
+                Toast.makeText(context, "Now watching this item!", Toast.LENGTH_SHORT).show()
+            }
+
+            DatabaseManager.updateListing(listings[adapterPosition])
+        }
+
+        private fun sendMessage() {
+            val messageIntent = Intent(context, MessageActivity::class.java)
+            messageIntent.putStringArrayListExtra(MessageActivity.MEMBER_ARRAY, arrayListOf(userId, listings[adapterPosition].authorId))
+            context.startActivity(messageIntent)
+        }
+
+        private fun handleLongClick() {
+            val builder = AlertDialog.Builder(context)
+            builder.setTitle(listings[adapterPosition].title)
+            if(listings[adapterPosition].authorId == userId) {
+                builder.setPositiveButton("Mark as sold") { _, _ ->
+                    DatabaseManager.markAsSold(listings[adapterPosition])
+                }
+                builder.setNegativeButton("Delete item") { _, _ ->
+                    DatabaseManager.deleteListing(listings[adapterPosition])
+                }
+                builder.setNeutralButton(android.R.string.cancel) { _, _ -> }
+            }else {
+                builder.setPositiveButton("Message") { _, _ ->
+                    sendMessage()
+                }
+            }
+            builder.create().show()
         }
     }
 }

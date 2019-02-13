@@ -13,12 +13,14 @@ import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_add_listing.*
 import java.io.ByteArrayOutputStream
 
-private const val SELECT_IMAGE_REQ = 1
-
 /*
 *   Class which manages posting a new item for sale.
 */
 class AddListingActivity: AppCompatActivity() {
+
+    companion object {
+        const val SELECT_IMAGE_REQ = 1
+    }
 
     private val images = ArrayList<ByteArray>()
     private var user: User = User()

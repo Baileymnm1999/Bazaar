@@ -32,7 +32,7 @@
                 android:id="@+id/content_main_notf"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                layout="@layout/layout_messages"
+                layout="@layout/layout_inbox"
                 android:visibility="visible"/>
     </ViewFlipper>
 
